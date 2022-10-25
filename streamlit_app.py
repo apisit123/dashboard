@@ -20,33 +20,42 @@ import numpy as np
 import pandas as pd
 import pydeck as pdk
 import streamlit as st
-import plotly.figure_factory as ff
 
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-import matplotlib.pyplot as plt
-
 # SETTING PAGE CONFIG TO WIDE MODE AND ADDING A TITLE AND FAVICON
 st.set_page_config(layout="wide", page_title="NYC Ridesharing Demo", page_icon=":taxi:")
+
+streamlit_style = """
+            <style>
+            @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100&display=swap');
+
+            html, body, h1, h2, h3, h4, h5 [class*="css"]  {
+            font-family: 'Roboto', sans-serif;
+            }
+            </style>
+            """
+st.markdown(streamlit_style, unsafe_allow_html=True)
 
 
 row2_1, row2_2, row2_3 = st.columns((4, 2, 2))
 
 with row2_1:
-    chart_data = pd.DataFrame(
+    with st.expander("Freezer Temperation (°C)", True):
+        chart_data = pd.DataFrame(
+            np.random.randn(20, 3),
+            columns=['a', 'b', 'c'])
+
+        st.area_chart(chart_data, height=226)
+
+
+    with st.expander("Product IN (basket/min)", True):
+        chart_data = pd.DataFrame(
         np.random.randn(20, 3),
         columns=['a', 'b', 'c'])
 
-    st.area_chart(chart_data)
-
-
-
-    chart_data = pd.DataFrame(
-    np.random.randn(20, 3),
-    columns=['a', 'b', 'c'])
-
-    st.area_chart(chart_data)
+        st.area_chart(chart_data, height=226)
 
 with row2_2:
     
@@ -82,7 +91,7 @@ with row2_3:
             p = 60
             a = 70
 
-            st.markdown("<h3 style='text-align: center; color: grey;'>Overall OEE : 10%</h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='text-align: center; color: grey;'>Overall OEE : 60%</h3>", unsafe_allow_html=True)
             st.header("\n")
 
             fig = make_subplots (rows=3,cols=1,
@@ -116,6 +125,7 @@ with row2_3:
                                           ])
             fig.update_layout(showlegend=False)
             fig.update_layout(margin=dict(l=0,r=0,b=0,t=0))
+            fig.update_layout(font_family="'Roboto', sans-serif")
 
 
             st.plotly_chart(fig, use_container_width=True)
