@@ -21,13 +21,13 @@ st.set_page_config(
 # dashboard title
 st.title("Real-Time / Live Data Science Dashboard")
 
-with st.sidebar:
-    with st.echo():
-        st.write("This code will be printed to the sidebar.")
+# with st.sidebar:
+#     with st.echo():
+#         st.write("This code will be printed to the sidebar.")
 
-    with st.spinner("Loading..."):
-        time.sleep(5)
-    st.success("Done!")
+#     with st.spinner("Loading..."):
+#         time.sleep(5)
+#     st.success("Done!")
 
 # creating a single-element container
 placeholder = st.empty()
@@ -38,8 +38,18 @@ count = 1
 req = requests.get('http://128.199.136.204:1880/temp_all');
 req= req.json()
 
+ts = pd.DataFrame.from_dict(req)
+filter_timestamp = ts[['timestamp']].iloc[0]
+
+# st.write(filter_timestamp[0])
+req2 = requests.get('http://128.199.136.204:1880/product_count?ts='+ filter_timestamp[0]);
+req2 = req2.json()
+
 le = len(req)
 ids = req[le-1]["id"]
+
+le2 = len(req2)
+ids2 = req2[le2-1]["id"]
 
 
 # near real-time / live feed simulation
@@ -48,7 +58,14 @@ while True:
     r = requests.get('http://128.199.136.204:1880/temp?id='+str(ids))
     r = r.json()
 
+    r2 = requests.get('http://128.199.136.204:1880/product_count_id?id='+str(ids2))
+    r2 = r2.json()
+
     req.append(r[0])
+
+    req2.append(r2[0])
+
+
 
     if any(elem is not None for elem in req):
 
@@ -62,6 +79,30 @@ while True:
 
         dfFreezer = pd.pivot_table(df, values='value', index=df.index)
         dfFreezer.columns = ['°C']
+
+        df2 = pd.DataFrame.from_dict(req2)
+        df2 = df2[['id', 'timestamp', 'product_count_fg']]
+
+        df2.timestamp = pd.to_datetime(df2.timestamp)
+        df2.set_index(df2.timestamp,inplace=True)
+
+
+        dfCnt = pd.pivot_table(df2, values='product_count_fg', index=df2.index)
+        dfCnt.columns = ['bk/min']
+
+        xx = df2['product_count_fg'].sum()
+        rt = df[df.value < -28].count()
+        runtime = rt[0]/60
+
+        nrt = df2[df2.product_count_fg >-28].count()
+        net_runtime = nrt[0]/60
+
+        a = 100
+        p = (net_runtime / runtime) * 100
+        q = 100
+
+        all_oee = (a * p * q ) / 10000
+        # st.write(net_runtime)     
 
         # st.dataframe(df)
 
@@ -79,11 +120,7 @@ while True:
 
 
                 with st.expander("Product IN (basket/min)", True):
-                    chart_data = pd.DataFrame(
-                    np.random.randn(20, 1),
-                    columns=['a'])
-
-                    st.area_chart(chart_data, height=226)
+                    st.line_chart(dfCnt, height=226)
 
             with row2_2:
                 
@@ -91,7 +128,7 @@ while True:
                     with st.expander("Product Count", True):
                         # st.header("")
                         # st.markdown("<h2 style='text-align: center; color: grey;'>Product Count</h2>", unsafe_allow_html=True)
-                        st.markdown("<h1 style='text-align: center; color: grey;'>"+str(count)+"</h1>", unsafe_allow_html=True)
+                        st.markdown("<h1 style='text-align: center; color: grey;'>"+str(xx)+"</h1>", unsafe_allow_html=True)
                         st.markdown("<h3 style='text-align: center; color: grey;'>pcs</h3>", unsafe_allow_html=True)
                         st.header("\n")
 
@@ -99,7 +136,7 @@ while True:
 
                 with st.container():
                     with st.expander("Runtime (hr)", True):
-                        st.markdown("<h2 style='text-align: center;'>17.7</h2>", unsafe_allow_html=True)
+                        st.markdown("<h2 style='text-align: center;'>"+str("{:.1f}".format(runtime))+"</h2>", unsafe_allow_html=True)
                         my_bar = st.progress(0)
                         my_bar.progress(70)
                         st.header("\n")
@@ -107,7 +144,7 @@ while True:
 
                 with st.container():
                     with st.expander("Net Runtime (hr)", True):
-                        st.markdown("<h2 style='text-align: center;'>15.7</h2>", unsafe_allow_html=True)
+                        st.markdown("<h2 style='text-align: center;'>"+str("{:.1f}".format(net_runtime))+"</h2>", unsafe_allow_html=True)
                         my_bar = st.progress(0)
                         my_bar.progress(60)
                         st.header("\n")
@@ -115,11 +152,8 @@ while True:
             with row2_3:
                 with st.container():
                     with st.expander("OEE", True):
-                        q = 100
-                        p = 60
-                        a = 70
 
-                        st.markdown("<h3 style='text-align: center; color: grey;'>Overall OEE : 60%</h3>", unsafe_allow_html=True)
+                        st.markdown("<h3 style='text-align: center; color: grey;'>Overall OEE : "+str("{:.1f}".format(all_oee))+"%</h3>", unsafe_allow_html=True)
                         st.header("\n")
 
                         fig = make_subplots (rows=3,cols=1,
@@ -148,7 +182,7 @@ while True:
                                               ),row=3, col=1)
 
                         fig.update_layout(annotations=[dict(text="Q  : "+str(q)+"%", x=0.5, y=0.1, font_size=15, showarrow=False),
-                                                       dict(text="P : "+str(p)+"%", x=0.5, y=0.5, font_size=15, showarrow=False),
+                                                       dict(text="P : "+str("{:.1f}".format(p))+"%", x=0.5, y=0.5, font_size=15, showarrow=False),
                                                        dict(text="A : "+str(a)+"%", x=0.5, y=0.9, font_size=15, showarrow=False),
                                                       ])
                         fig.update_layout(showlegend=False)
