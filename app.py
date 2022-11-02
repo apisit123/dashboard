@@ -1,7 +1,5 @@
 import time  # to simulate a real time data, time loop
 
-#
-
 import numpy as np  # np mean, np random
 import pandas as pd  # read csv, df manipulation
 import plotly.express as px  # interactive charts
@@ -13,6 +11,8 @@ import json
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import requests
+from datetime import datetime as dt
+import pytz
 
 st.set_page_config(
     page_title="Real-Time Data Science Dashboard",
@@ -79,6 +79,10 @@ while True:
         df.timestamp = pd.to_datetime(df.timestamp)
         df.set_index(df.timestamp,inplace=True)
 
+        t1 = df.timestamp[0].tz_convert(None)
+        # t1 = t1.dt.tz_convert(None)
+        # st.write(t1)
+
         dfFreezer = pd.pivot_table(df, values='value', index=df.index)
         dfFreezer.columns = ['°C']
 
@@ -96,10 +100,18 @@ while True:
         rt = df[df.value < -28].count()
         runtime = rt[0]/60
 
-        nrt = df2[df2.product_count_fg >-28].count()
+        nrt = df2[df2.product_count_fg > 0].count()
         net_runtime = nrt[0]/60
 
-        a = 100
+        t2 = dt.now()
+
+        # st.write(t2)
+
+
+        all_time = rt[0] / ((t2-t1).total_seconds() // 60.0)
+        # st.write(all_time)
+
+        a = all_time * 100
         p = (net_runtime / runtime) * 100
         q = 100
 
@@ -183,9 +195,9 @@ while True:
                                               marker_colors=['rgb(113,209,145)','rgb(240,240,240)'],
                                               ),row=3, col=1)
 
-                        fig.update_layout(annotations=[dict(text="Q  : "+str(q)+"%", x=0.5, y=0.1, font_size=15, showarrow=False),
+                        fig.update_layout(annotations=[dict(text="Q  : "+str("{:.1f}".format(q))+"%", x=0.5, y=0.1, font_size=15, showarrow=False),
                                                        dict(text="P : "+str("{:.1f}".format(p))+"%", x=0.5, y=0.5, font_size=15, showarrow=False),
-                                                       dict(text="A : "+str(a)+"%", x=0.5, y=0.9, font_size=15, showarrow=False),
+                                                       dict(text="A : "+str("{:.1f}".format(a))+"%", x=0.5, y=0.9, font_size=15, showarrow=False),
                                                       ])
                         fig.update_layout(showlegend=False)
                         fig.update_layout(margin=dict(l=0,r=0,b=0,t=0))
